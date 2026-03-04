@@ -1,1 +1,30 @@
-import BottomNav from "@/components/BottomNav";\nimport { cookies } from "next/headers";\nimport { redirect } from "next/navigation";\nimport { verifyToken } from "@/lib/auth";\n\nexport default async function ProtectedLayout({\n  children,\n}: {\n  children: React.ReactNode;\n}) {\n  const sessionToken = cookies().get("session")?.value;\n\n  if (!sessionToken) {\n    redirect("/");\n  }\n\n  const payload = await verifyToken(sessionToken);\n  \n  if (!payload || !payload.partner_id || !payload.b2b) {\n    redirect("/");\n  }\n\n  return (\n    <div className="flex flex-col min-h-screen">\n      <div className="flex-1 overflow-y-auto no-scrollbar">{children}</div>\n      <BottomNav />\n    </div>\n  );\n}
+import BottomNav from "@/components/BottomNav";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyToken } from "@/lib/auth";
+
+export default async function ProtectedLayout({
+    children,
+}: {
+    children: React.ReactNode;
+}) {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("session")?.value;
+
+    if (!sessionToken) {
+        redirect("/");
+    }
+
+    const payload = await verifyToken(sessionToken);
+
+    if (!payload || !payload.partner_id || !payload.b2b) {
+        redirect("/");
+    }
+
+    return (
+        <div className="flex flex-col min-h-screen">
+            <div className="flex-1 overflow-y-auto no-scrollbar">{children}</div>
+            <BottomNav />
+        </div>
+    );
+}
