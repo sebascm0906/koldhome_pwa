@@ -12,19 +12,25 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Simulate API call to n8n/magic link
     try {
-        const res = await fetch('/api/auth/request-link', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mobile })
-        });
-        if (res.ok) setSent(true);
+      // Obtenemos link y simulamos la cookie temporal para no quedarnos bloqueados
+      const res = await fetch('/api/auth/request-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile })
+      });
+
+      if (res.ok) {
+        // En vez de mostrar link enviado, seteamos una cookie mock y vamos a home
+        document.cookie = "session=mock-token-123; path=/";
+        window.location.href = "/home";
+      }
     } catch (err) {
-        console.error(err);
+      console.error(err);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -33,7 +39,7 @@ export default function LoginPage() {
       <div className="flex flex-col items-center justify-center p-6 text-center space-y-6 flex-1">
         <h1 className="text-3xl font-bold text-primary italic">¡Link enviado! 🧊</h1>
         <p className="text-muted-foreground">Revisa tu WhatsApp. Te enviamos un link mágico para entrar sin contraseña.</p>
-        <button 
+        <button
           onClick={() => setSent(false)}
           className="text-primary underline text-sm"
         >
@@ -46,9 +52,9 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col items-center justify-center p-8 space-y-10 flex-1 max-w-md mx-auto w-full">
       <div className="relative w-32 h-32 neon-glow rounded-3xl overflow-hidden">
-        <Image 
-          src="/icons/icon-512x512.png" 
-          alt="KoldHome Logo" 
+        <Image
+          src="/icons/icon-512x512.png"
+          alt="KoldHome Logo"
           fill
           className="object-cover"
         />
@@ -62,7 +68,7 @@ export default function LoginPage() {
       <form onSubmit={handleLogin} className="w-full space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-muted-foreground ml-1">Número de WhatsApp</label>
-          <input 
+          <input
             type="tel"
             placeholder="Ej. 5512345678"
             required
@@ -72,7 +78,7 @@ export default function LoginPage() {
           />
         </div>
 
-        <button 
+        <button
           disabled={loading || !mobile}
           className="w-full h-14 bg-primary text-white font-bold rounded-2xl text-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
