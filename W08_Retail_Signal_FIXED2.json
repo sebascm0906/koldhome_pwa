@@ -1,0 +1,1101 @@
+{
+  "name": "W08 Retail Signal",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "type": "cron",
+          "value": "0 */6 * * *"
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "meta_token",
+              "value": "={{ $vars.META_ACCESS_TOKEN }}",
+              "type": "string"
+            },
+            {
+              "name": "openai_key",
+              "value": "={{ $vars.OPENAI_API_SECRET }}",
+              "type": "string"
+            },
+            {
+              "name": "wa_token",
+              "value": "={{ $vars.WA_ACCESS_TOKEN }}",
+              "type": "string"
+            },
+            {
+              "name": "wa_phone_id",
+              "value": "={{ $vars.WA_PHONE_NUMBER_ID }}",
+              "type": "string"
+            },
+            {
+              "name": "sales_wa",
+              "value": "={{ $vars.KOLD_ADMIN_WA_NUMBER }}",
+              "type": "string"
+            },
+            {
+              "name": "odoo_url",
+              "value": "={{ $vars.ODOO_URL.replace(/\\/odoo\\/?$/, '') }}",
+              "type": "string"
+            },
+            {
+              "name": "odoo_db",
+              "value": "={{ $vars.ODOO_DB }}",
+              "type": "string"
+            },
+            {
+              "name": "odoo_user",
+              "value": "={{ $vars.ODOO_USER }}",
+              "type": "string"
+            },
+            {
+              "name": "odoo_pass",
+              "value": "={{ $vars.ODOO_PASSWORD }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Inject Vars",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ String($json.odoo_url).replace(/\\/+$/, '').replace(/\\/(?:odoo\\/web|odoo|web)$/, '') + '/web/session/authenticate' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ \"jsonrpc\": \"2.0\", \"method\": \"call\", \"id\": 1, \"params\": { \"db\": \"{{ $json.odoo_db }}\", \"login\": \"{{ $json.odoo_user }}\", \"password\": \"{{ $json.odoo_pass }}\" } }"
+      },
+      "name": "Odoo Auth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst res = $input.first().json;\nconst vars = $('Inject Vars').first().json;\nconst headers = res.headers ?? {};\n\nconst rawSetCookie = headers['set-cookie'] ?? headers['Set-Cookie'] ?? '';\nconst merged = Array.isArray(rawSetCookie) ? rawSetCookie.join(';') : String(rawSetCookie);\n\nlet sid = (merged.match(/(?:^|;\\s*)session_id=([^;]+)/)?.[1] || '');\nsid = sid\n  .replace(/[\\r\\n\\t ]+/g, '')\n  .replace(/^session_id=/i, '')\n  .replace(/[^A-Za-z0-9._\\-+/=]/g, '')\n  .trim();\n\nif (!sid) throw new Error('session_id vac\u00edo tras limpieza');\n\nreturn [{ json: { ...vars, session_id: sid, cookie_header: `session_id=${sid}` } }];\n"
+      },
+      "name": "Extract SID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/17841466499415339/media?fields=id,caption,timestamp,like_count,comments_count,media_type&limit=10&access_token={{ $json.meta_token }}"
+      },
+      "name": "IG koldcup",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        -250
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/17841478500163339/media?fields=id,caption,timestamp,like_count,comments_count,media_type&limit=10&access_token={{ $json.meta_token }}"
+      },
+      "name": "IG koldworld",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        -150
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/17841480705102602/media?fields=id,caption,timestamp,like_count,comments_count,media_type&limit=10&access_token={{ $json.meta_token }}"
+      },
+      "name": "IG koldhome",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        -50
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/17841480237269261/media?fields=id,caption,timestamp,like_count,comments_count,media_type&limit=10&access_token={{ $json.meta_token }}"
+      },
+      "name": "IG koldsnack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        50
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/17841480531411885/media?fields=id,caption,timestamp,like_count,comments_count,media_type&limit=10&access_token={{ $json.meta_token }}"
+      },
+      "name": "IG koldhielomx",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v20.0/17841478135575883/media?fields=id,caption,timestamp,like_count,comments_count,media_type&limit=10&access_token={{ $json.meta_token }}"
+      },
+      "name": "IG koldsmuthiemx",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "name": "Merge Posts",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst brandData = [\n  { name:'koldcup',       ig:'17841466499415339', fb:'61559153273449',   odoo_id:38, node:'IG koldcup' },\n  { name:'koldworld',     ig:'17841478500163339', fb:'885658441291968',  odoo_id:37, node:'IG koldworld' },\n  { name:'koldhome',      ig:'17841480705102602', fb:'976588825542989',  odoo_id:36, node:'IG koldhome' },\n  { name:'koldsnack',     ig:'17841480237269261', fb:'994376280421827',  odoo_id:35, node:'IG koldsnack' },\n  { name:'koldhielomx',   ig:'17841480531411885', fb:'918436421361412',  odoo_id:34, node:'IG koldhielomx' },\n  { name:'koldsmuthiemx', ig:'17841478135575883', fb:'891669537374121',  odoo_id:33, node:'IG koldsmuthiemx' }\n];\n\nconst cutoff = new Date(Date.now() - 12 * 60 * 60 * 1000);\nconst sid = $('Extract SID').first().json;\nconst vars = $('Inject Vars').first().json;\n\nconst allPosts = [];\n\nfor (const brand of brandData) {\n  let posts = [];\n  try {\n    const raw = $('Merge Posts').first().json[brand.name] || $node[brand.node]?.json;\n    if (!raw) {\n        // Fallback for node ref\n        const rawFallback = $items(brand.node)[0]?.json;\n        if (rawFallback) posts = rawFallback.data || [];\n    } else {\n        posts = raw.data || [];\n    }\n  } catch(e) { continue; }\n\n  for (const post of posts) {\n    const postDate = new Date(post.timestamp);\n    if (postDate < cutoff) continue;\n    if ((post.comments_count || 0) === 0) continue;\n\n    allPosts.push({ json: {\n      post_id: post.id,\n      brand: brand.name,\n      brand_odoo_id: brand.odoo_id,\n      ig_account: brand.ig,\n      fb_page: brand.fb,\n      post_caption: (post.caption || '').substring(0, 200),\n      post_date: post.timestamp,\n      comments_count: post.comments_count,\n      session_id: sid.session_id,\n      cookie_header: sid.cookie_header,\n      ...vars\n    }});\n  }\n}\n\nif (allPosts.length === 0) {\n  return [{ json: { nothing_to_scan: true, ...vars }}];\n}\n\nreturn allPosts;\n"
+      },
+      "name": "Filter Recent Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.nothing_to_scan }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "If Nothing",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nreturn [{ json: {\n  comments_url: `https://graph.facebook.com/v20.0/${$json.post_id}/comments`,\n  params: `?fields=id,message,from,timestamp,like_count&limit=50&access_token=${$json.meta_token}`,\n  post_id: $json.post_id,\n  brand: $json.brand,\n  brand_odoo_id: $json.brand_odoo_id,\n  ig_account: $json.ig_account,\n  fb_page: $json.fb_page,\n  post_caption: $json.post_caption,\n  session_id: $json.session_id,\n  cookie_header: $json.cookie_header,\n  meta_token: $json.meta_token,\n  openai_key: $json.openai_key,\n  wa_token: $json.wa_token,\n  wa_phone_id: $json.wa_phone_id,\n  sales_wa: $json.sales_wa,\n  odoo_url: $json.odoo_url\n}}];\n"
+      },
+      "name": "Build Comments Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.comments_url + $json.params }}"
+      },
+      "name": "GET IG Comments",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1800,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst raw = $input.first().json;\nconst comments = raw.data || raw.result?.data || [];\nconst ctx = $('Build Comments Query').first().json;\n\nif (comments.length === 0) {\n  return [{ json: { no_comments: true, brand: ctx.brand }}];\n}\n\nconst batch = comments.slice(0, 20).map(c => ({\n  id: c.id,\n  msg: (c.message || '').substring(0, 300),\n  from: c.from?.name || c.from?.username || 'an\u00f3nimo',\n  from_id: c.from?.id || '',\n  timestamp: c.timestamp,\n  likes: c.like_count || 0\n}));\n\nreturn [{ json: {\n  comments_batch: batch,\n  total_comments: comments.length,\n  post_id: ctx.post_id,\n  brand: ctx.brand,\n  brand_odoo_id: ctx.brand_odoo_id,\n  post_caption: ctx.post_caption,\n  ig_account: ctx.ig_account,\n  session_id: ctx.session_id,\n  cookie_header: ctx.cookie_header,\n  openai_key: ctx.openai_key,\n  wa_token: ctx.wa_token,\n  wa_phone_id: ctx.wa_phone_id,\n  sales_wa: ctx.sales_wa,\n  odoo_url: ctx.odoo_url,\n  meta_token: ctx.meta_token,\n  no_comments: false\n}}];\n"
+      },
+      "name": "Parse Comments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.no_comments }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "If No Comments",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.openai_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Eres un analista de se\u00f1ales de demanda retail para KOLD, empresa mexicana de productos congelados (hielo, snacks, smuthies).\\n\\nTu trabajo: identificar en comentarios de redes sociales cu\u00e1les expresan intenci\u00f3n de compra AL MAYOREO o para DISTRIBUCI\u00d3N/REVENTA.\\n\\nSE\u00d1ALES POSITIVAS (retail_intent = true):\\n- Preguntar por precio mayoreo o precio para revender\\n- Preguntar d\u00f3nde comprar para poner en su negocio\\n- Mencionar tienda, changarro, abarrotes, cremer\u00eda, miscel\u00e1nea\\n- Preguntar por distribuci\u00f3n, distribuidores, representantes\\n- Pedir informaci\u00f3n para llevar el producto a su zona/ciudad\\n- Preguntar por presentaciones de caja o pallet\\n- Mencionar que tiene un negocio y quiere vender el producto\\n\\nSE\u00d1ALES NEGATIVAS (retail_intent = false):\\n- Comentarios de consumidor final (quiero comprarlo para m\u00ed)\\n- Preguntas sobre precio de venta al p\u00fablico normal\\n- Comentarios generales (qu\u00e9 rico, me encanta, etc.)\\n- Quejas o reclamos\\n- Preguntas sobre entrega a domicilio\\n\\nResponde SOLO en JSON sin texto adicional.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Analiza estos comentarios del post de la marca {{ $json.brand }} en Instagram.\\nPost caption: \\\"{{ $json.post_caption }}\\\"\\n\\nComentarios a analizar:\\n{{ JSON.stringify($json.comments_batch) }}\\n\\nDevuelve EXACTAMENTE este JSON:\\n{\\n  \\\"signals\\\": [\\n    {\\n      \\\"comment_id\\\": \\\"id del comentario\\\",\\n      \\\"retail_intent\\\": true/false,\\n      \\\"confidence\\\": 0.0-1.0,\\n      \\\"intent_type\\\": \\\"mayoreo|distribucion|zona_nueva|precio_reventa|otro\\\",\\n      \\\"zona_mencionada\\\": \\\"ciudad o zona si la menciona, sino null\\\",\\n      \\\"from_name\\\": \\\"nombre del usuario\\\",\\n      \\\"from_id\\\": \\\"id del usuario\\\",\\n      \\\"message\\\": \\\"texto del comentario\\\",\\n      \\\"timestamp\\\": \\\"timestamp del comentario\\\",\\n      \\\"razon\\\": \\\"por qu\u00e9 s\u00ed o no en 10 palabras\\\"\\n    }\\n  ],\\n  \\\"total_analyzed\\\": numero,\\n  \\\"total_signals\\\": numero\\n}\"\n    }\n  ],\n  \"max_tokens\": 2000,\n  \"temperature\": 0,\n  \"response_format\": { \"type\": \"json_object\" }\n}"
+      },
+      "name": "GPT Retail Signal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst raw = $json.choices[0].message.content;\nconst gpt = typeof raw === 'string' ? JSON.parse(raw) : raw;\nconst signals = (gpt.signals || []).filter(s =>\n  s.retail_intent === true && s.confidence >= 0.70\n);\n\nconst ctx = $('Parse Comments').first().json;\nconst sid = { session_id: ctx.session_id, cookie_header: ctx.cookie_header };\nconst vars = {\n  wa_token: ctx.wa_token,\n  wa_phone_id: ctx.wa_phone_id,\n  sales_wa: ctx.sales_wa,\n  odoo_url: ctx.odoo_url,\n  meta_token: ctx.meta_token,\n  openai_key: ctx.openai_key\n};\n\nif (signals.length === 0) {\n  return [{ json: { no_signals: true, brand: ctx.brand }}];\n}\n\nreturn signals.map(s => ({ json: {\n  comment_id: s.comment_id,\n  brand: ctx.brand,\n  brand_odoo_id: ctx.brand_odoo_id,\n  post_id: ctx.post_id,\n  post_caption: ctx.post_caption,\n  ig_account: ctx.ig_account,\n  retail_intent: s.retail_intent,\n  confidence: s.confidence,\n  intent_type: s.intent_type || 'mayoreo',\n  zona_mencionada: s.zona_mencionada || null,\n  from_name: s.from_name || '',\n  from_id: s.from_id || '',\n  message: s.message || '',\n  comment_timestamp: s.timestamp,\n  razon: s.razon || '',\n  no_signals: false,\n  ...sid,\n  ...vars\n}}));\n"
+      },
+      "name": "Filter Real Signals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.no_signals }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "If No Signals",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nreturn [{ json: {\n  payload: {\n    jsonrpc: \"2.0\", method: \"call\",\n    params: {\n      model: \"x_kold_retail_signal_event\",\n      method: \"search_read\",\n      args: [[[\"x_comment_id\", \"=\", $json.comment_id]]],\n      kwargs: { fields: [\"id\"], limit: 1 }\n    }\n  },\n  ...($json)\n}}];\n"
+      },
+      "name": "Build Dedup Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.odoo_url }}/web/dataset/call_kw",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $json.cookie_header }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.payload) }}"
+      },
+      "name": "Odoo Dedup Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst result = $input.first().json.result || [];\nconst ctx = $('Build Dedup Check').first().json; // Context preserve across batch\n\nif (result.length > 0) {\n  return [{ json: { is_duplicate: true, comment_id: ctx.comment_id }}];\n}\nreturn [{ json: { is_duplicate: false, ...ctx }}];\n"
+      },
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_duplicate }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "If Duplicate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        3600,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst ctx = $input.first().json;\nconst now = new Date().toISOString().replace('T',' ').substring(0,19);\n// fallback robust text length limit or parsing\nreturn [{ json: {\n  signal_payload: {\n    jsonrpc: \"2.0\", method: \"call\",\n    params: {\n      model: \"x_kold_retail_signal_event\", method: \"create\",\n      args: [[{\n        x_name: `Se\u00f1al Retail \u2014 ${ctx.brand} \u2014 ${ctx.from_name || 'an\u00f3nimo'}`,\n        x_brand_id: String(ctx.brand_odoo_id),\n        x_comment_id: ctx.comment_id,\n        x_post_id: ctx.post_id,\n        x_from: ctx.from_id || '',\n        x_from_name: ctx.from_name || '',\n        x_body: ctx.message,\n        x_intent_type: ctx.intent_type,\n        x_confidence: parseFloat(ctx.confidence),\n        x_zona: ctx.zona_mencionada || '',\n        x_platform: 'instagram',\n        x_source: 'instagram',\n        x_received_at: ctx.comment_timestamp || now,\n        x_status: 'nuevo'\n      }]],\n      kwargs: {}\n    }\n  },\n  ...ctx\n}}];\n"
+      },
+      "name": "Build Signal Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3800,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.odoo_url }}/web/dataset/call_kw",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $json.cookie_header }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.signal_payload) }}"
+      },
+      "name": "Create Signal Odoo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4000,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst ctx = $('Build Signal Record').first().json;\nconst signalId = $input.first().json.result || 0;\n\nconst zona = ctx.zona_mencionada\n  ? ` \u2014 Zona: ${ctx.zona_mencionada}` : '';\nconst typeMap = {\n  'mayoreo': 'Inter\u00e9s Mayoreo',\n  'distribucion': 'Busca Distribuci\u00f3n',\n  'zona_nueva': 'Nueva Zona',\n  'precio_reventa': 'Precio Reventa',\n  'otro': 'Se\u00f1al Retail'\n};\nconst tipo = typeMap[ctx.intent_type] || 'Se\u00f1al Retail';\n\nreturn [{ json: {\n  lead_payload: {\n    jsonrpc: \"2.0\", method: \"call\",\n    params: {\n      model: \"crm.lead\", method: \"create\",\n      args: [[{\n        name: `${tipo} \u2014 ${ctx.brand}${zona} \u2014 @${ctx.from_name}`,\n        contact_name: ctx.from_name || '',\n        description:\n          `\ud83d\udcf1 Comentario en Instagram (${ctx.brand})\\n` +\n          `Post: ${ctx.post_caption}\\n\\n` +\n          `Comentario: ${ctx.message}\\n\\n` +\n          `Intent: ${ctx.intent_type} (confianza: ${Math.round(ctx.confidence*100)}%)\\n` +\n          `Zona mencionada: ${ctx.zona_mencionada || 'No especificada'}\\n` +\n          `Raz\u00f3n IA: ${ctx.razon}`,\n        x_source_channel: 'instagram',\n        x_social_uid: ctx.from_id || '',\n        tag_ids: [[4, 1]], // The tag 'Retail Signal' has ID: 1 as created in previous step\n        priority: ctx.confidence >= 0.90 ? '2' : '1'\n      }]],\n      kwargs: {}\n    }\n  },\n  signal_id: signalId,\n  ...ctx\n}}];\n"
+      },
+      "name": "Build CRM Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4200,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.odoo_url }}/web/dataset/call_kw",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $json.cookie_header }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.lead_payload) }}"
+      },
+      "name": "Create Lead Odoo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4400,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst leadId = $input.first().json.result || 0;\nconst ctx = $('Build CRM Lead').first().json;\n\nreturn [{ json: {\n  payload: {\n    jsonrpc: \"2.0\", method: \"call\",\n    params: {\n      model: \"x_kold_retail_signal_event\",\n      method: \"write\",\n      args: [\n        [parseInt(ctx.signal_id)],\n        { x_lead_id: leadId, x_status: 'lead_creado' }\n      ],\n      kwargs: {}\n    }\n  },\n  lead_id: leadId,\n  ...ctx\n}}];\n"
+      },
+      "name": "Link Lead to Signal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4600,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.odoo_url }}/web/dataset/call_kw",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $json.cookie_header }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.payload) }}"
+      },
+      "name": "Odoo Write Signal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4800,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst ctx = $('Build CRM Lead').first().json;\nconst leadId = $('Link Lead to Signal').first().json.lead_id;\n\nconst tipoLabel = {\n  'mayoreo': '\ud83c\udfea Inter\u00e9s en mayoreo',\n  'distribucion': '\ud83d\ude9a Busca distribuci\u00f3n',\n  'zona_nueva': '\ud83d\udccd Nueva zona sin cobertura',\n  'precio_reventa': '\ud83d\udcb0 Precio para reventa',\n  'otro': '\ud83d\udcca Se\u00f1al retail'\n}[ctx.intent_type] || '\ud83d\udcca Se\u00f1al retail';\n\nconst zonaMsg = ctx.zona_mencionada\n  ? `\\n\ud83d\udccd Zona mencionada: *${ctx.zona_mencionada}*` : '';\n\nconst msg =\n  `\ud83c\udfaf *Nueva Se\u00f1al Retail \u2014 ${ctx.brand}*\\n\\n` +\n  `${tipoLabel}\\n` +\n  `\ud83d\udc64 Usuario: @${ctx.from_name || 'an\u00f3nimo'}${zonaMsg}\\n` +\n  `\ud83d\udcac Comentario: \"${ctx.message}\"\\n` +\n  `\ud83e\udd16 Confianza IA: ${Math.round(ctx.confidence*100)}%\\n\\n` +\n  `\ud83d\udccc Post: \"${ctx.post_caption}\"\\n\\n` +\n  `Lead creado en Odoo: ${ctx.odoo_url}/web#id=${leadId}&model=crm.lead\\n\\n` +\n  `Responde al comentario en IG o contacta directamente.`;\n\nlet formattedPhone = (ctx.sales_wa || '').replace(/\\D/g, '');\nif (formattedPhone.length === 10) formattedPhone = '52' + formattedPhone;\n\nreturn [{ json: {\n  wa_body: msg,\n  wa_to: formattedPhone,\n  wa_token: ctx.wa_token,\n  wa_phone_id: ctx.wa_phone_id,\n  odoo_url: ctx.odoo_url,\n  cookie_header: ctx.cookie_header,\n  comment_id: ctx.comment_id\n}}];\n"
+      },
+      "name": "Build WA Sales Notif",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5000,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{ $json.wa_phone_id }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.wa_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ messaging_product: \"whatsapp\", to: $json.wa_to, type: \"text\", text: { body: $json.wa_body } }) }}"
+      },
+      "name": "Send WA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5200,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nreturn [{\n  json: {\n    log_payload: {\n      jsonrpc: \"2.0\", method: \"call\",\n      params: {\n        model: \"x_kold_workflow_run_log\", method: \"create\",\n        args: [[{\n          x_workflow_id: \"W08\",\n          x_run_id: \"W08_\" + $json.comment_id,\n          x_status: \"success\",\n          x_started_at: new Date().toISOString().replace('T', ' ').substring(0, 19),\n          x_environment: \"staging\"\n        }]],\n        kwargs: {}\n      }\n    },\n    ...$json\n  }\n}];\n"
+      },
+      "name": "Build Success Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5400,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.odoo_url }}/web/dataset/call_kw",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $json.cookie_header }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.log_payload) }}"
+      },
+      "name": "Log Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5600,
+        400
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\nreturn [{ json: { payload: {\n  x_workflow_id: \"W08 Retail Signal\",\n  x_run_id: \"W08_ERROR_\" + Date.now().toString(),\n  x_status: \"fail\",\n  x_error_message: $json.execution?.error?.message || \"Error desconocido\",\n  x_started_at: new Date().toISOString().replace('T',' ').substring(0,19),\n  x_environment: \"staging\"\n}}}];"
+      },
+      "name": "Build Error Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.ODOO_URL.replace(/\\/odoo\\/?$/, '') }}/web/dataset/call_kw",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({jsonrpc:'2.0',method:'call',params:{model:'x_kold_workflow_run_log',method:'create',args:[[$json.payload]],kwargs:{}}}) }}"
+      },
+      "name": "Log Fail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        800
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Inject Vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inject Vars": {
+      "main": [
+        [
+          {
+            "node": "Odoo Auth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Odoo Auth": {
+      "main": [
+        [
+          {
+            "node": "Extract SID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract SID": {
+      "main": [
+        [
+          {
+            "node": "IG koldcup",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IG koldworld",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IG koldhome",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IG koldsnack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IG koldhielomx",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IG koldsmuthiemx",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG koldcup": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG koldworld": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG koldhome": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG koldsnack": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG koldhielomx": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IG koldsmuthiemx": {
+      "main": [
+        [
+          {
+            "node": "Merge Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Posts": {
+      "main": [
+        [
+          {
+            "node": "Filter Recent Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Recent Posts": {
+      "main": [
+        [
+          {
+            "node": "If Nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Nothing": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Build Comments Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Comments Query": {
+      "main": [
+        [
+          {
+            "node": "GET IG Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET IG Comments": {
+      "main": [
+        [
+          {
+            "node": "Parse Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Comments": {
+      "main": [
+        [
+          {
+            "node": "If No Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If No Comments": {
+      "main": [
+        [],
+        [
+          {
+            "node": "GPT Retail Signal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT Retail Signal": {
+      "main": [
+        [
+          {
+            "node": "Filter Real Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Real Signals": {
+      "main": [
+        [
+          {
+            "node": "If No Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If No Signals": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Build Dedup Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Dedup Check": {
+      "main": [
+        [
+          {
+            "node": "Odoo Dedup Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Odoo Dedup Check": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "If Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Duplicate": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Build Signal Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Signal Record": {
+      "main": [
+        [
+          {
+            "node": "Create Signal Odoo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Signal Odoo": {
+      "main": [
+        [
+          {
+            "node": "Build CRM Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build CRM Lead": {
+      "main": [
+        [
+          {
+            "node": "Create Lead Odoo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Lead Odoo": {
+      "main": [
+        [
+          {
+            "node": "Link Lead to Signal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Link Lead to Signal": {
+      "main": [
+        [
+          {
+            "node": "Odoo Write Signal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Odoo Write Signal": {
+      "main": [
+        [
+          {
+            "node": "Build WA Sales Notif",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build WA Sales Notif": {
+      "main": [
+        [
+          {
+            "node": "Send WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WA": {
+      "main": [
+        [
+          {
+            "node": "Build Success Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success Log": {
+      "main": [
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Log": {
+      "main": [
+        [
+          {
+            "node": "Log Fail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
