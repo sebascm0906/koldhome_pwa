@@ -233,7 +233,7 @@ function CartContent() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Método de pago</label>
               <div className="grid grid-cols-3 gap-2">
-                {['efectivo', 'transferencia', 'tarjeta'].map((method) => (
+                {['efectivo', 'transferencia', ...(stripePromise ? ['tarjeta'] : [])].map((method) => (
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
@@ -292,9 +292,6 @@ function CartContent() {
 }
 
 export default function CartPage() {
-  if (!stripePromise) {
-    return <CartContent />;
-  }
   return (
     <Elements stripe={stripePromise}>
       <CartContent />
