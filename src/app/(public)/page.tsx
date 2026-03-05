@@ -30,16 +30,73 @@ export default function LoginPage() {
     }
   };
 
+  const [code, setCode] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      const res = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile, code })
+      });
+
+      if (res.ok) {
+        document.cookie = "session=mock-token-123; path=/";
+        window.location.href = "/home";
+      } else {
+        setErrorMsg("Código incorrecto, intenta de nuevo.");
+      }
+    } catch (err) {
+      setErrorMsg("Ocurrió un error en el servidor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (sent) {
     return (
-      <div className="flex flex-col items-center justify-center p-6 text-center space-y-6 flex-1">
-        <h1 className="text-3xl font-bold text-primary italic">¡Link enviado! 🧊</h1>
-        <p className="text-muted-foreground">Revisa tu WhatsApp. Te enviamos un link mágico para entrar sin contraseña.</p>
+      <div className="flex flex-col items-center justify-center p-6 text-center space-y-6 flex-1 max-w-md mx-auto w-full">
+        <h1 className="text-3xl font-bold text-primary italic">Verifica tu número 🧊</h1>
+        <p className="text-muted-foreground">Enviamos un código numérico a tu WhatsApp.</p>
+
+        <form onSubmit={handleVerify} className="w-full space-y-6">
+          <div className="space-y-2">
+            <input
+              autoFocus
+              type="text"
+              maxLength={6}
+              placeholder="Ingresa los 6 dígitos"
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+              className={`w-full h-14 bg-secondary border-2 ${errorMsg ? 'border-destructive' : 'border-transparent'} rounded-2xl text-center text-3xl tracking-widest focus:ring-2 focus:ring-primary outline-none transition-all`}
+            />
+            {errorMsg && <p className="text-sm font-bold text-destructive">{errorMsg}</p>}
+          </div>
+
+          <button
+            disabled={loading || code.length !== 6}
+            className="w-full h-14 bg-primary text-white font-bold rounded-2xl text-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : "Verificar y Entrar"}
+          </button>
+        </form>
+
         <button
-          onClick={() => setSent(false)}
-          className="text-primary underline text-sm"
+          disabled={loading}
+          onClick={() => {
+            setSent(false);
+            setCode("");
+            setErrorMsg("");
+          }}
+          className="text-primary underline text-sm pt-4"
         >
-          Intentar con otro número
+          No recibí el código, intentar otro número
         </button>
       </div>
     );
