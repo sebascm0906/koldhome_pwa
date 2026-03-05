@@ -14,7 +14,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 
 // Initialize Stripe Promise outside component to avoid recreation
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : Promise.resolve(null);
 
 function CheckoutForm({ onPaymentSuccess, onPaymentError, isProcessing }: any) {
   const stripe = useStripe();
@@ -67,7 +67,16 @@ function CartContent() {
       .catch(() => setUserPoints(0));
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background pb-40 flex flex-col">
+        <Header title="Tu Pedido" showBack />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="animate-spin text-primary w-12 h-12" />
+        </div>
+      </div>
+    );
+  }
 
   const subtotal = getTotal();
   const pointsEarned = Math.floor(subtotal / 10);
@@ -233,7 +242,7 @@ function CartContent() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Método de pago</label>
               <div className="grid grid-cols-3 gap-2">
-                {['efectivo', 'transferencia', ...(stripePromise ? ['tarjeta'] : [])].map((method) => (
+                {['efectivo', 'transferencia', ...(stripeKey ? ['tarjeta'] : [])].map((method) => (
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
