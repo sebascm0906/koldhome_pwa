@@ -22,11 +22,7 @@ export default function LoginPage() {
         body: JSON.stringify({ mobile })
       });
 
-      if (res.ok) {
-        // En vez de mostrar link enviado, seteamos una cookie mock y vamos a home
-        document.cookie = "session=mock-token-123; path=/";
-        window.location.href = "/home";
-      }
+      if (res.ok) setSent(true);
     } catch (err) {
       console.error(err);
     } finally {

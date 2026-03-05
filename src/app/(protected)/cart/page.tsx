@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, Minus, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getLoyaltyRewards } from "@/lib/actions/loyalty";
+import { getLoyaltyCard } from "@/lib/actions/account";
 
 import Header from "@/components/Header";
 
@@ -12,7 +13,8 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 // Initialize Stripe Promise outside component to avoid recreation
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : Promise.resolve(null);
 
 function CheckoutForm({ onPaymentSuccess, onPaymentError, isProcessing }: any) {
   const stripe = useStripe();
@@ -47,7 +49,7 @@ function CartContent() {
 
   const [deliveryWindow, setDeliveryWindow] = useState("09-12");
   const [paymentMethod, setPaymentMethod] = useState("efectivo");
-  
+
   const items = useCartStore(state => state.items);
   const setQty = useCartStore(state => state.setQty);
   const clearCart = useCartStore(state => state.clearCart);
@@ -59,10 +61,9 @@ function CartContent() {
   useEffect(() => {
     setMounted(true);
     getLoyaltyRewards().then(setRewards);
-    
-    fetch('/api/account/profile')
-      .then(res => res.json())
-      .then(data => setUserPoints(data.loyalty?.points || 0))
+
+    getLoyaltyCard()
+      .then(data => setUserPoints(data.points || 0))
       .catch(() => setUserPoints(0));
   }, []);
 
@@ -70,7 +71,7 @@ function CartContent() {
 
   const subtotal = getTotal();
   const pointsEarned = Math.floor(subtotal / 10);
-  const testPartnerId = 14; 
+  const testPartnerId = 14;
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -124,14 +125,14 @@ function CartContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) throw new Error(data.error || 'Failed to create order in Odoo');
-      
+
       clearCart();
       router.push(`/order/confirmed?order_name=${data.order_name}&points=${pointsEarned}&window=${deliveryWindow}`);
-      
+
     } catch (err: any) {
       alert("Error Checkout: " + err.message);
       setLoading(false);
@@ -169,11 +170,11 @@ function CartContent() {
                 </div>
                 <div className="flex items-center gap-3 bg-secondary rounded-lg p-1 border border-border">
                   <button onClick={() => setQty(item.product_id, item.qty - 1)} className="p-1">
-                    {item.qty === 1 ? <Trash2 size={16} className="text-destructive"/> : <Minus size={16}/>}
+                    {item.qty === 1 ? <Trash2 size={16} className="text-destructive" /> : <Minus size={16} />}
                   </button>
                   <span className="font-bold w-4 text-center text-sm">{item.qty}</span>
                   <button onClick={() => setQty(item.product_id, item.qty + 1)} className="p-1">
-                    <Plus size={16}/>
+                    <Plus size={16} />
                   </button>
                 </div>
               </div>
@@ -197,11 +198,10 @@ function CartContent() {
                     key={reward.id}
                     disabled={!canAfford}
                     onClick={() => setSelectedReward(isSelected ? null : reward)}
-                    className={`flex-shrink-0 p-3 rounded-xl border text-left transition-all w-48 ${
-                      isSelected ? 'bg-primary border-primary text-white neon-glow' 
-                      : !canAfford ? 'bg-card border-border opacity-50' 
-                      : 'bg-card border-border hover:border-primary/50 text-white'
-                    }`}
+                    className={`flex-shrink-0 p-3 rounded-xl border text-left transition-all w-48 ${isSelected ? 'bg-primary border-primary text-white neon-glow'
+                        : !canAfford ? 'bg-card border-border opacity-50'
+                          : 'bg-card border-border hover:border-primary/50 text-white'
+                      }`}
                   >
                     <div className="font-bold text-sm">{reward.description}</div>
                     <div className={`text-xs mt-1 ${isSelected ? 'text-white' : 'text-primary'}`}>{reward.required_points} pts</div>
@@ -214,11 +214,11 @@ function CartContent() {
 
         <section className="space-y-4">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Entrega y Pago</h2>
-          
+
           <div className="bg-card rounded-2xl p-4 space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Horario de entrega</label>
-              <select 
+              <select
                 value={deliveryWindow}
                 onChange={(e) => setDeliveryWindow(e.target.value)}
                 className="w-full h-12 bg-secondary border border-border rounded-xl px-4 outline-none text-white focus:ring-1 focus:ring-primary appearance-none"
@@ -229,7 +229,7 @@ function CartContent() {
                 <option value="18-21">06:00 PM - 09:00 PM</option>
               </select>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Método de pago</label>
               <div className="grid grid-cols-3 gap-2">
@@ -237,11 +237,10 @@ function CartContent() {
                   <button
                     key={method}
                     onClick={() => setPaymentMethod(method)}
-                    className={`h-10 rounded-lg text-xs font-bold capitalize transition-all border ${
-                      paymentMethod === method 
-                        ? 'bg-primary border-primary text-white neon-glow' 
+                    className={`h-10 rounded-lg text-xs font-bold capitalize transition-all border ${paymentMethod === method
+                        ? 'bg-primary border-primary text-white neon-glow'
                         : 'bg-secondary border-border text-muted-foreground hover:border-primary/50'
-                    }`}
+                      }`}
                   >
                     {method}
                   </button>
@@ -250,7 +249,7 @@ function CartContent() {
             </div>
 
             {paymentMethod === 'tarjeta' && (
-               <CheckoutForm />
+              <CheckoutForm />
             )}
           </div>
         </section>
@@ -273,13 +272,13 @@ function CartContent() {
             <span className="text-green-400 font-bold">Gratis</span>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-2xl font-extrabold text-white">${subtotal.toFixed(2)}</span>
             <span className="text-xs text-primary font-medium">Ganarás {pointsEarned} puntos al entregar</span>
           </div>
-          <button 
+          <button
             disabled={loading || (paymentMethod === 'tarjeta' && !stripe)}
             onClick={handleCheckout}
             className="bg-primary px-8 h-14 rounded-2xl flex items-center justify-center gap-2 text-white font-bold text-lg transition-all hover:scale-105 active:scale-95 neon-glow disabled:opacity-50 disabled:cursor-not-allowed"
