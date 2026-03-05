@@ -14,7 +14,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 
 // Initialize Stripe Promise outside component to avoid recreation
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = stripeKey ? loadStripe(stripeKey) : Promise.resolve(null);
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 function CheckoutForm({ onPaymentSuccess, onPaymentError, isProcessing }: any) {
   const stripe = useStripe();
@@ -199,8 +199,8 @@ function CartContent() {
                     disabled={!canAfford}
                     onClick={() => setSelectedReward(isSelected ? null : reward)}
                     className={`flex-shrink-0 p-3 rounded-xl border text-left transition-all w-48 ${isSelected ? 'bg-primary border-primary text-white neon-glow'
-                        : !canAfford ? 'bg-card border-border opacity-50'
-                          : 'bg-card border-border hover:border-primary/50 text-white'
+                      : !canAfford ? 'bg-card border-border opacity-50'
+                        : 'bg-card border-border hover:border-primary/50 text-white'
                       }`}
                   >
                     <div className="font-bold text-sm">{reward.description}</div>
@@ -238,8 +238,8 @@ function CartContent() {
                     key={method}
                     onClick={() => setPaymentMethod(method)}
                     className={`h-10 rounded-lg text-xs font-bold capitalize transition-all border ${paymentMethod === method
-                        ? 'bg-primary border-primary text-white neon-glow'
-                        : 'bg-secondary border-border text-muted-foreground hover:border-primary/50'
+                      ? 'bg-primary border-primary text-white neon-glow'
+                      : 'bg-secondary border-border text-muted-foreground hover:border-primary/50'
                       }`}
                   >
                     {method}
@@ -292,6 +292,9 @@ function CartContent() {
 }
 
 export default function CartPage() {
+  if (!stripePromise) {
+    return <CartContent />;
+  }
   return (
     <Elements stripe={stripePromise}>
       <CartContent />

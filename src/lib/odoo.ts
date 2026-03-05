@@ -36,22 +36,30 @@ export async function authenticate() {
 }
 
 export async function callKw(model: string, method: string, args: any[], kwargs: any = {}) {
-  const sid = await authenticate();
-  
-  const response = await fetch(`${ODOO_URL}/web/dataset/call_kw`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Cookie': `session_id=${sid}`
-    },
-    body: JSON.stringify({
-      jsonrpc: '2.0',
-      method: 'call',
-      params: { model, method, args, kwargs }
-    })
-  });
+  try {
+    const sid = await authenticate();
 
-  const data = await response.json();
-  if (data.error) throw new Error(`Odoo RPC Error: ${JSON.stringify(data.error)}`);
-  return data.result;
+    const response = await fetch(`${ODOO_URL}/web/dataset/call_kw`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': `session_id=${sid}`
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'call',
+        params: { model, method, args, kwargs }
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) {
+      console.error(`Odoo RPC Error: ${JSON.stringify(data.error)}`);
+      return null;
+    }
+    return data.result;
+  } catch (err) {
+    console.error("RPC Catch:", err);
+    return null;
+  }
 }
