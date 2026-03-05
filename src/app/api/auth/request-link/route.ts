@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     console.log(`[AUTH] Magic Link requested for: ${mobile}`);
 
     // Call n8n webhook
-    await fetch(process.env.N8N_WEBHOOK_BASE + '/webhook/auth-request', {
+    await fetch(process.env.N8N_WEBHOOK_BASE + '/webhook/pwa-auth-request', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
