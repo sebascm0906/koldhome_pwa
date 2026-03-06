@@ -20,7 +20,7 @@ export default function ProductCard({ product }: { product: any }) {
     addItem({
       product_id: product.id,
       name: product.name,
-      price: product.list_price,
+      price: product.lst_price,
       qty: 1,
       emoji: "🧊" // Defaulting to ice since we don't have images
     });
@@ -56,7 +56,7 @@ export default function ProductCard({ product }: { product: any }) {
       </div>
 
       <div className="flex items-center justify-between pt-2 h-9">
-        <span className="font-extrabold text-[#00b4ff] text-lg">${product.list_price}</span>
+        <span className="font-extrabold text-[#00b4ff] text-lg">${product.lst_price}</span>
 
         {(!mounted || qty === 0) ? (
           <button
