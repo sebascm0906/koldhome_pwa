@@ -49,6 +49,9 @@ export default function LoginPage() {
 
       if (res.ok && data.success) {
         document.cookie = `session=${data.session_token}; path=/; max-age=604800`;
+        if (data.partner_id) {
+          document.cookie = `partner_id=${data.partner_id}; path=/; max-age=604800`;
+        }
         window.location.href = "/home";
       } else {
         setErrorMsg(data.error || "Código incorrecto, intenta de nuevo.");
