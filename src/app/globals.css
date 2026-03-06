@@ -20,14 +20,19 @@
   --color-border: #1e293b;
   --color-input: #1e293b;
   --color-ring: #00b4ff;
-  
+
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
 }
 
 @layer base {
-  *, ::after, ::before, ::backdrop, ::file-selector-button {
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
     border-color: var(--color-border, currentColor);
   }
 }
@@ -37,6 +42,8 @@ body {
   color: var(--color-foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+
 
 .glass {
   background: rgba(22, 30, 49, 0.7);
@@ -52,6 +59,7 @@ body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
