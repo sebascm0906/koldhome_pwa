@@ -45,11 +45,13 @@ export default function LoginPage() {
         body: JSON.stringify({ mobile, code })
       });
 
-      if (res.ok) {
-        document.cookie = "session=mock-token-123; path=/";
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        document.cookie = `session=${data.session_token}; path=/; max-age=604800`;
         window.location.href = "/home";
       } else {
-        setErrorMsg("Código incorrecto, intenta de nuevo.");
+        setErrorMsg(data.error || "Código incorrecto, intenta de nuevo.");
       }
     } catch (err) {
       setErrorMsg("Ocurrió un error en el servidor.");
