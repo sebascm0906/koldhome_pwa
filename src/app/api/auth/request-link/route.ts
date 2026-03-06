@@ -7,18 +7,22 @@ export async function POST(req: Request) {
 
     console.log(`[AUTH] Magic Link requested for: ${mobile}`);
 
-    // Limpiar número para buscar (quitar +, espacios)
+    // Limpiar número para buscar (quitar +, espacios) y espaciarlo con wildcards % para ignorar el formato de Odoo
     const cleanMobile = mobile?.replace(/\D/g, '').slice(-10); // get last 10 digits to be safe
+    const wildcardMobile = cleanMobile ? '%' + cleanMobile.split('').join('%') + '%' : '';
 
-    // Buscar al usuario en Odoo
+    // Buscar al usuario original en Odoo
     let partnerName = "Kolder";
-    if (cleanMobile) {
+    if (wildcardMobile) {
       const partner = await callKw('res.partner', 'search_read', [
-        '|',
-        ['phone', 'ilike', cleanMobile],
-        ['mobile', 'ilike', cleanMobile]
+        [
+          '|',
+          ['phone', 'ilike', wildcardMobile],
+          ['mobile', 'ilike', wildcardMobile]
+        ]
       ], {
         fields: ['name'],
+        order: 'create_date asc', // ensure oldest matching user
         limit: 1
       });
 

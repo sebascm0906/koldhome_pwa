@@ -75,7 +75,6 @@ function CartContent() {
 
     const subtotal = getTotal();
     const pointsEarned = Math.floor(subtotal / 10);
-    const testPartnerId = 14;
 
     const handleCheckout = async () => {
         setLoading(true);
@@ -97,7 +96,6 @@ function CartContent() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         amount_cents: Math.round(subtotal * 100),
-                        partner_id: testPartnerId,
                         order_ref: tempOrderRef
                     })
                 });
@@ -117,7 +115,6 @@ function CartContent() {
 
             // 2. Create Odoo Order
             const payload = {
-                partner_id: testPartnerId,
                 delivery_window: deliveryWindow,
                 payment_method: paymentMethod === 'tarjeta' ? 'tarjeta_confirmada' : paymentMethod,
                 cart_lines: items,
