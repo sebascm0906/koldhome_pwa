@@ -2,10 +2,16 @@
 
 import { useCartStore } from "@/store/cartStore";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function ProductCard({ product }: { product: any }) {
   const addItem = useCartStore(state => state.addItem);
   const items = useCartStore(state => state.items);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const cartItem = items.find(i => i.product_id === product.id);
   const qty = cartItem ? cartItem.qty : 0;
@@ -49,10 +55,10 @@ export default function ProductCard({ product }: { product: any }) {
         <p className="text-[10px] text-slate-400 uppercase">{product.categ_id[1]}</p>
       </div>
 
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex items-center justify-between pt-2 h-9">
         <span className="font-extrabold text-[#00b4ff] text-lg">${product.list_price}</span>
 
-        {qty === 0 ? (
+        {(!mounted || qty === 0) ? (
           <button
             onClick={handleAdd}
             className="bg-primary hover:bg-primary/80 w-8 h-8 rounded-xl flex items-center justify-center text-white neon-glow transition-all"
@@ -60,7 +66,7 @@ export default function ProductCard({ product }: { product: any }) {
             <span className="text-lg font-bold">+</span>
           </button>
         ) : (
-          <div className="flex items-center gap-2 bg-secondary rounded-xl p-1 border border-border">
+          <div className="flex items-center gap-2 bg-secondary rounded-xl p-1 border border-border h-8">
             <button
               onClick={handleRemove}
               className="w-6 h-6 flex items-center justify-center rounded-lg bg-background text-white font-bold"
