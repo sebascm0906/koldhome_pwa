@@ -31,6 +31,12 @@ export async function POST(req: Request) {
       }
     }
 
+    // Limpiar para N8N (asegurar prefijo 52 si es 10 digitos mx)
+    let normalizedMobile = mobile?.replace(/\D/g, '').trim();
+    if (normalizedMobile.length === 10 && !normalizedMobile.startsWith('52')) {
+      normalizedMobile = `52${normalizedMobile}`;
+    }
+
     // Call n8n webhook for WA sending
     await fetch(process.env.N8N_WEBHOOK_BASE + '/webhook/pwa-auth-request', {
       method: 'POST',
@@ -38,7 +44,7 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        mobile: mobile,
+        mobile: normalizedMobile,
         name: partnerName
       })
     });

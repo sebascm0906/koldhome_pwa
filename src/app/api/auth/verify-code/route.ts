@@ -8,13 +8,20 @@ export async function POST(req: Request) {
 
         const verifyUrl = `${process.env.N8N_WEBHOOK_BASE || 'https://car12los023.app.n8n.cloud'}/webhook/pwa-auth-verify`;
 
+        // Limpiar para N8N que requiere match exacto
+        let normalizedPhone = mobile?.replace(/\D/g, '').trim();
+        // Si el cliente tipeó "4436930710" (10 dígitos en MX), N8N usualmente espera "524436930710"
+        if (normalizedPhone.length === 10 && !normalizedPhone.startsWith('52')) {
+            normalizedPhone = `52${normalizedPhone}`;
+        }
+
         const n8nRes = await fetch(verifyUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                phone: mobile?.replace(/\+/g, '').trim(), // Ensure pure number string just in case
+                phone: normalizedPhone,
                 token: code
             })
         });
