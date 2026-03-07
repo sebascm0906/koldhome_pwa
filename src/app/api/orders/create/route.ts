@@ -79,28 +79,42 @@ export async function POST(req: Request) {
       throw new Error("Failed to create sale.order in Odoo");
     }
 
-    // 4. Manual points deduction (Hybrid approach)
-    // We update the loyalty.card balance directly to reflect the reward consumption
-    if (reward_id && rewardPoints > 0) {
-      console.log(`Deducting ${rewardPoints} points for reward ${reward_id}`);
-      try {
-        // Find the user's loyalty card for program 2
-        const cardSearch = await callKw('loyalty.card', 'search_read', [
-          [['partner_id', '=', partner_id], ['program_id', '=', 2]]
-        ], { fields: ['id', 'points'], limit: 1 });
+    // 4. Manual points calculation (Hybrid approach)
+    // We update the loyalty.card balance directly to reflect the reward consumption and points earned
 
-        if (cardSearch && cardSearch.length > 0) {
-          const card = cardSearch[0];
-          const newPoints = Math.max(0, card.points - rewardPoints);
+    // Calculate points earned (1 point per $10 spent on products, ignoring the reward line)
+    const subtotalOrigin = cart_lines.reduce((acc: number, item: any) => acc + (item.price * item.qty), 0);
+    const earnedPoints = Math.floor(subtotalOrigin / 10);
 
-          await callKw('loyalty.card', 'write', [[card.id], {
-            points: newPoints
-          }]);
-          console.log(`Deducted points. Old balance: ${card.points}, New: ${newPoints}`);
-        }
-      } catch (err) {
-        console.error("Failed to deduct points on hybrid approach. You may need to manual adjust. ", err);
+    try {
+      // Find the user's loyalty card for program 2
+      let cardSearch = await callKw('loyalty.card', 'search_read', [
+        [['partner_id', '=', partner_id], ['program_id', '=', 2]]
+      ], { fields: ['id', 'points'], limit: 1 });
+
+      // Auto-create if not exists
+      if (!cardSearch || cardSearch.length === 0) {
+        const newCardId = await callKw('loyalty.card', 'create', [{
+          partner_id: partner_id,
+          program_id: 2,
+          points: 0
+        }]);
+        cardSearch = [{ id: newCardId, points: 0 }];
       }
+
+      if (cardSearch && cardSearch.length > 0) {
+        const card = cardSearch[0];
+        // Calculate new balance: Current Points - Spent Points + Earned Points
+        const spentPoints = reward_id ? rewardPoints : 0;
+        const newPoints = Math.max(0, card.points - spentPoints) + earnedPoints;
+
+        await callKw('loyalty.card', 'write', [[card.id], {
+          points: newPoints
+        }]);
+        console.log(`Updated points. Old: ${card.points}, Spent: ${spentPoints}, Earned: ${earnedPoints}, New: ${newPoints}`);
+      }
+    } catch (err) {
+      console.error("Failed to update points on hybrid approach. ", err);
     }
 
     // 4. Confirm the order

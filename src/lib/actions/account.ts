@@ -26,10 +26,22 @@ export async function getPartnerProfile() {
 export async function getLoyaltyCard() {
   try {
     const partnerId = await getPartnerId();
-    const data = await callKw('loyalty.card', 'search_read', [[['partner_id', '=', partnerId], ['program_id', '=', 2]]], {
+    let data = await callKw('loyalty.card', 'search_read', [[['partner_id', '=', partnerId], ['program_id', '=', 2]]], {
       fields: ['id', 'points'],
       limit: 1
     });
+
+    if (data.length === 0) {
+      // Auto-create card if user doesn't have one for Program 2 yet
+      const newCardId = await callKw('loyalty.card', 'create', [{
+        partner_id: partnerId,
+        program_id: 2,
+        points: 0
+      }]);
+      console.log(`Auto-created Loyalty Card ${newCardId} for Partner ${partnerId}`);
+
+      data = [{ id: newCardId, points: 0 }];
+    }
 
     const points = data.length > 0 ? data[0].points : 0;
 
@@ -40,7 +52,7 @@ export async function getLoyaltyCard() {
 
     return { points, level };
   } catch (error) {
-    console.error('Error fetching loyalty card:', error);
+    console.error('Error fetching/creating loyalty card:', error);
     return { points: 0, level: "Bronce" };
   }
 }

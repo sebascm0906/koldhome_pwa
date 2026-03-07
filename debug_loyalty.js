@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-async function testApplyRewardHybrid() {
+async function checkLoyaltyCards() {
     const ODOO_URL = process.env.ODOO_URL;
     const ODOO_DB = process.env.ODOO_DB;
     const ODOO_USER = process.env.ODOO_SERVICE_USER;
@@ -35,45 +35,20 @@ async function testApplyRewardHybrid() {
         return data;
     };
 
-    // Hybrid Line Injection Test 
-    const rewardLine = [
-        0,
-        0,
-        {
-            name: `Recompensa: $30 de descuento híbrida`,
-            product_uom_qty: 1,
-            price_unit: -30,
-            is_reward_line: true
-        }
-    ];
+    const partnerId = 54913; // Perfil original Koldhome con numero +52 443 693 0710
 
-    const orderData = {
-        partner_id: 54913,
-        company_id: 34,
-        order_line: [
-            [0, 0, { product_id: 56, product_uom_qty: 2 }],
-            rewardLine
-        ]
-    };
+    // All loyalty cards for this user
+    const cards = await callKw('loyalty.card', 'search_read', [[['partner_id', '=', partnerId]]], {
+        fields: ['id', 'points', 'points_display', 'program_id']
+    });
+    console.log("Loyalty Cards for partner 54913:", cards.result);
 
-    try {
-        const createRes = await callKw('sale.order', 'create', [orderData]);
-        const testOrderId = createRes.result;
-        console.log("Created Hybrid Order Id:", testOrderId);
-
-        const finalOrder = await callKw('sale.order', 'search_read', [[['id', '=', testOrderId]]], {
-            fields: ['name', 'amount_total', 'order_line']
-        });
-        console.log("Final Hybrid Order:", finalOrder.result);
-
-        // Wait for check
-        await new Promise(r => setTimeout(r, 2000));
-
-        await callKw('sale.order', 'action_cancel', [[testOrderId]]);
-        console.log("Canceled!");
-    } catch (e) {
-        console.error("Hybrid creation failed:", e);
-    }
+    // All loyalty cards ignoring partner to see what program IDs exist
+    const allCards = await callKw('loyalty.card', 'search_read', [[]], {
+        fields: ['id', 'points', 'partner_id', 'program_id'],
+        limit: 5
+    });
+    console.log("Random cards in system:", allCards.result);
 }
 
-testApplyRewardHybrid().catch(console.error);
+checkLoyaltyCards().catch(console.error);
