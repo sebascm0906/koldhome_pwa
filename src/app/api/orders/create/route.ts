@@ -16,13 +16,13 @@ export async function POST(req: Request) {
     }
 
     // 1. Format order lines for Odoo (Command 0: Create)
+    // We strictly OMIT price_unit so Odoo auto-calculates base price + taxes
     const orderLines = cart_lines.map((line: any) => [
       0,
       0,
       {
         product_id: line.product_id,
-        product_uom_qty: line.qty,
-        price_unit: line.price,
+        product_uom_qty: line.qty
       }
     ]);
 

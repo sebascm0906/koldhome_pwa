@@ -1,7 +1,8 @@
 import Header from "@/components/Header";
 import { getPartnerProfile, getLoyaltyCard } from "@/lib/actions/account";
-import { ChevronRight, LogOut, Package, Star, MapPin, Phone, User } from "lucide-react";
+import { ChevronRight, Package, Star, MapPin, Phone, User } from "lucide-react";
 import Link from "next/link";
+import LogoutButton from "@/components/LogoutButton";
 
 export default async function AccountPage() {
   const profile = await getPartnerProfile();
@@ -45,7 +46,7 @@ export default async function AccountPage() {
                 {loyalty.level}
               </div>
             </div>
-            
+
             <div className="flex items-end justify-between">
               <div className="flex flex-col">
                 <span className="text-3xl font-extrabold text-white">{loyalty.points}</span>
@@ -69,15 +70,7 @@ export default async function AccountPage() {
             </div>
             <ChevronRight size={18} className="text-muted-foreground" />
           </Link>
-          
-          <button className="w-full flex items-center justify-between p-5 hover:bg-secondary/50 transition-all">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-destructive/10 rounded-xl text-destructive">
-                <LogOut size={20} />
-              </div>
-              <span className="font-bold text-sm text-destructive">Cerrar Sesión</span>
-            </div>
-          </button>
+          <LogoutButton />
         </section>
       </main>
     </div>
