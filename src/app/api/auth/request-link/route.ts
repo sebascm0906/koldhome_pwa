@@ -31,10 +31,15 @@ export async function POST(req: Request) {
       }
     }
 
-    // Limpiar para N8N (asegurar prefijo 52 si es 10 digitos mx)
-    let normalizedMobile = mobile?.replace(/\D/g, '').trim();
-    if (normalizedMobile.length === 10 && !normalizedMobile.startsWith('52')) {
-      normalizedMobile = `52${normalizedMobile}`;
+    // Asegurar que inicie con +52 para alinear con el Webhook de N8N  
+    let normalizedMobile = mobile?.replace(/[^\d+]/g, '').trim();
+
+    if (normalizedMobile.length === 10) {
+      normalizedMobile = `+52${normalizedMobile}`;
+    } else if (normalizedMobile.startsWith('52')) {
+      normalizedMobile = `+${normalizedMobile}`;
+    } else if (!normalizedMobile.startsWith('+')) {
+      normalizedMobile = `+${normalizedMobile}`;
     }
 
     // Call n8n webhook for WA sending
