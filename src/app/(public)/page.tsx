@@ -136,12 +136,23 @@ export default function LoginPage() {
           />
         </div>
 
-        <button
-          disabled={loading || !mobile}
-          className="w-full h-14 bg-primary text-white font-bold rounded-2xl text-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-        >
-          {loading ? <Loader2 className="animate-spin" /> : "Solicitar link de acceso"}
-        </button>
+        <div className="flex flex-col gap-3 w-full">
+          <button
+            disabled={loading || !mobile}
+            className="w-full h-14 bg-primary text-white font-bold rounded-2xl text-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : "Solicitar código de acceso"}
+          </button>
+
+          <a
+            href="https://www.koldhome.com/registro-de-cliente-kold-home"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full h-14 bg-secondary text-primary font-bold rounded-2xl text-lg hover:opacity-90 transition-all flex items-center justify-center gap-2"
+          >
+            Regístrate aquí
+          </a>
+        </div>
       </form>
 
       <p className="text-xs text-center text-muted-foreground/60 px-4">
