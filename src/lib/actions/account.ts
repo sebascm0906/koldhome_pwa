@@ -2,6 +2,7 @@
 import { callKw } from "@/lib/odoo";
 
 import { cookies } from "next/headers";
+import { unstable_rethrow } from "next/navigation";
 
 async function getPartnerId(): Promise<number> {
   const cookieStore = await cookies();
@@ -18,6 +19,7 @@ export async function getPartnerProfile() {
     });
     return data.length > 0 ? data[0] : null;
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error fetching partner:', error);
     return null;
   }
@@ -52,6 +54,7 @@ export async function getLoyaltyCard() {
 
     return { points, level };
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error fetching/creating loyalty card:', error);
     return { points: 0, level: "Bronce" };
   }
@@ -69,6 +72,7 @@ export async function getOrderHistory() {
     });
     return data;
   } catch (error) {
+    unstable_rethrow(error);
     console.error('Error fetching order history:', error);
     return [];
   }
