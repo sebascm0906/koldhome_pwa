@@ -1,12 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
+import { trackWebOpened, trackPwaOpened } from "@/lib/tracking";
 
 export default function HomeClient({ products, categories }: { products: any[], categories: string[] }) {
     const [activeCategory, setActiveCategory] = useState("Todos");
     const [searchQuery, setSearchQuery] = useState("");
+
+    // B2C Tracking: fire web_opened (bot redirect) or pwa_opened (standalone)
+    useEffect(() => {
+        trackWebOpened();
+        trackPwaOpened();
+    }, []);
 
     const filteredProducts = products.filter(p => {
         // Math category

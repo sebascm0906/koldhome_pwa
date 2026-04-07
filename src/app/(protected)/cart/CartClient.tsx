@@ -9,6 +9,7 @@ import { getLoyaltyCard } from "@/lib/actions/account";
 
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { trackCheckoutStarted } from "@/lib/tracking";
 
 // Initialize Stripe Promise outside component to avoid recreation
 const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -78,6 +79,17 @@ function CartContent() {
 
     const handleCheckout = async () => {
         setLoading(true);
+
+        // B2C Tracking: checkout_started
+        trackCheckoutStarted({
+            items: items.map(i => ({
+                product_id: i.product_id, name: i.name, qty: i.qty, price: i.price
+            })),
+            total: subtotal,
+            payment_method: paymentMethod,
+            delivery_window: deliveryWindow,
+        });
+
         try {
             // 1. If paying with Stripe, process payment first
             if (paymentMethod === 'tarjeta') {

@@ -2,7 +2,8 @@
 
 import { CheckCircle2, Package, Clock, Star, ArrowRight, ListOrdered } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
+import { trackOrderPlaced } from "@/lib/tracking";
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
@@ -10,7 +11,16 @@ function ConfirmationContent() {
 
   const orderName = searchParams.get("order_name") || "Nuevo Pedido";
   const points = searchParams.get("points") || "0";
-  const window = searchParams.get("window") || "lo antes posible";
+  const deliveryWindow = searchParams.get("window") || "lo antes posible";
+
+  // B2C Tracking: order_placed_client
+  useEffect(() => {
+    trackOrderPlaced({
+      order_name: orderName,
+      total: 0, // Total not available on confirmation page
+      delivery_window: deliveryWindow,
+    });
+  }, [orderName, deliveryWindow]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-8">
@@ -42,7 +52,7 @@ function ConfirmationContent() {
           <Clock className="text-primary" size={20} />
           <div>
             <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Horario de Entrega</p>
-            <p className="font-bold text-white tracking-wide">{window}</p>
+            <p className="font-bold text-white tracking-wide">{deliveryWindow}</p>
           </div>
         </div>
 
