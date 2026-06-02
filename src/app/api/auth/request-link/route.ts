@@ -42,8 +42,9 @@ export async function POST(req: Request) {
       normalizedMobile = `+${normalizedMobile}`;
     }
 
-    // Call n8n webhook for WA sending. 
-    await fetch(process.env.N8N_WEBHOOK_BASE + '/webhook/pwa-auth-request', {
+    // Call n8n webhook for WA sending.
+    const n8nBase = process.env.N8N_WEBHOOK_BASE || 'https://n8n.grupofrio.mx';
+    await fetch(n8nBase + '/webhook/pwa-auth-request', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

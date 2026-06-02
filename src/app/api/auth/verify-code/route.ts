@@ -6,7 +6,7 @@ export async function POST(req: Request) {
 
         console.log(`[AUTH] Verifying code ${code} against n8n for mobile: ${mobile}`);
 
-        const verifyUrl = `${process.env.N8N_WEBHOOK_BASE || 'https://car12los023.app.n8n.cloud'}/webhook/pwa-auth-verify`;
+        const verifyUrl = `${process.env.N8N_WEBHOOK_BASE || 'https://n8n.grupofrio.mx'}/webhook/pwa-auth-verify`;
 
         // Asegurar que inicie con +52 para N8N (ya que tu webhook exige el +)
         let normalizedPhone = mobile?.replace(/[^\d+]/g, '').trim();
