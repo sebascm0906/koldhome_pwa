@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
-export default function MagicLinkPage() {
+function MagicLinkVerifier() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
   const [errorMsg, setErrorMsg] = useState("");
@@ -81,5 +81,20 @@ export default function MagicLinkPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center flex-1 p-8 text-center space-y-6">
+          <Loader2 className="animate-spin text-primary w-12 h-12" />
+          <p className="text-muted-foreground">Cargando...</p>
+        </div>
+      }
+    >
+      <MagicLinkVerifier />
+    </Suspense>
   );
 }
