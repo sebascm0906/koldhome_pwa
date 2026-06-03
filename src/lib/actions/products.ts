@@ -14,8 +14,11 @@ export async function getProducts() {
       limit: 300
     });
 
-    // Devolver lst_price directo — precios sin IVA como solicita el negocio
-    return products;
+    // Devolver lst_price redondeado a 2 decimales — sin IVA
+    return products.map((p: any) => ({
+      ...p,
+      lst_price: Math.round(p.lst_price * 100) / 100
+    }));
   } catch (error) {
     console.error('Error fetching products from Odoo:', error);
     return [];
