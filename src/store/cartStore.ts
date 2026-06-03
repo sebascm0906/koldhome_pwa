@@ -7,6 +7,7 @@ export interface CartItem {
   price: number;
   qty: number;
   emoji: string;
+  image_512?: string;
 }
 
 interface CartState {

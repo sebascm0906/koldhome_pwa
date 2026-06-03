@@ -63,12 +63,23 @@ export async function POST(req: Request) {
       orderLines.push(rewardLine);
     }
 
+    // Normalizar método de pago a mayúsculas para Odoo
+    const paymentMethodMap: Record<string, string> = {
+      efectivo: 'EFECTIVO',
+      transferencia: 'TRANSFERENCIA',
+      tarjeta: 'TARJETA',
+      tarjeta_confirmada: 'TARJETA'
+    };
+    const normalizedPayment = paymentMethodMap[payment_method?.toLowerCase()] || payment_method?.toUpperCase() || 'EFECTIVO';
+
     const orderData: any = {
       partner_id: partner_id,
       company_id: 34,
       x_studio_horario_de_entrega_solicitado: delivery_window,
-      x_studio_mtdo_de_pago: payment_method,
+      x_studio_mtodo_de_pago: normalizedPayment,
       x_studio_canal_origen: "pwa_koldhome",
+      x_source: "koldhome_pwa",
+      x_kold_order_source: "koldhome_pwa",
       order_line: orderLines
     };
 

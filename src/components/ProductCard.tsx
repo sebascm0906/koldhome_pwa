@@ -22,7 +22,8 @@ export default function ProductCard({ product }: { product: any }) {
       name: product.name,
       price: product.lst_price,
       qty: 1,
-      emoji: "🧊" // Defaulting to ice since we don't have images
+      emoji: "🧊",
+      image_512: product.image_512 || null
     });
   };
 

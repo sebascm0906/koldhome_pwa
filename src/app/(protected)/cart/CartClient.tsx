@@ -172,8 +172,16 @@ function CartContent() {
                     <div className="space-y-3">
                         {items.map(item => (
                             <div key={item.product_id} className="bg-card rounded-2xl p-3 flex gap-4 items-center">
-                                <div className="w-16 h-16 bg-secondary rounded-xl flex items-center justify-center text-2xl">
-                                    {item.emoji}
+                                <div className="w-16 h-16 bg-secondary rounded-xl flex items-center justify-center text-2xl overflow-hidden relative">
+                                    {item.image_512 ? (
+                                        <img
+                                            src={`data:image/jpeg;base64,${item.image_512}`}
+                                            alt={item.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        item.emoji
+                                    )}
                                 </div>
                                 <div className="flex-1 space-y-1">
                                     <h3 className="font-bold text-sm leading-tight text-white">{item.name}</h3>
