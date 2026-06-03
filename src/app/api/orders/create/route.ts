@@ -152,10 +152,8 @@ export async function POST(req: Request) {
           partner_id: order.partner_id[0],
         }]);
         if (wizId) {
-          const wizData = await callKw('payment.link.wizard', 'read', [[wizId]], {
-            fields: ['link_url', 'link']
-          });
-          stripe_link = wizData?.[0]?.link_url || wizData?.[0]?.link || null;
+          const wizData = await callKw('payment.link.wizard', 'read', [[wizId], ['link']]);
+          stripe_link = wizData?.[0]?.link || null;
           // Save link on the order
           if (stripe_link) {
             await callKw('sale.order', 'write', [[orderId], { x_stripe_link: stripe_link }]);
