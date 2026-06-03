@@ -131,20 +131,48 @@ export async function POST(req: Request) {
     // 4. Confirm the order
     await callKw('sale.order', 'action_confirm', [[orderId]]);
 
-    // 5. Fetch the order name (e.g. S00123)
+    // 5. Fetch the order name + data needed for payment link
     const orderDetails = await callKw('sale.order', 'search_read', [[['id', '=', orderId]]], {
-      fields: ['name'],
+      fields: ['name', 'amount_total', 'currency_id', 'partner_id'],
       limit: 1
     });
 
     const orderName = orderDetails.length > 0 ? orderDetails[0].name : `ID: ${orderId}`;
     console.log(`Successfully created and confirmed order ${orderName}`);
 
+    // 6. Generate Stripe payment link if payment method is tarjeta
+    let stripe_link: string | null = null;
+    if (payment_method?.toLowerCase() === 'tarjeta') {
+      try {
+        const order = orderDetails[0];
+        const wizId = await callKw('payment.link.wizard', 'create', [{
+          res_model: 'sale.order',
+          res_id: orderId,
+          amount: order.amount_total,
+          currency_id: order.currency_id[0],
+          partner_id: order.partner_id[0],
+        }]);
+        if (wizId) {
+          const wizData = await callKw('payment.link.wizard', 'read', [[wizId]], {
+            fields: ['link_url', 'link']
+          });
+          stripe_link = wizData?.[0]?.link_url || wizData?.[0]?.link || null;
+          // Save link on the order
+          if (stripe_link) {
+            await callKw('sale.order', 'write', [[orderId], { x_stripe_link: stripe_link }]);
+          }
+        }
+      } catch (err) {
+        console.error('Error generating payment link:', err);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       order_id: orderId,
       order_name: orderName,
-      estimated_delivery: delivery_window
+      estimated_delivery: delivery_window,
+      stripe_link
     });
 
   } catch (error: any) {

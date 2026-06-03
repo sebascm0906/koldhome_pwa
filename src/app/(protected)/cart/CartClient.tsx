@@ -6,37 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getLoyaltyRewards } from "@/lib/actions/loyalty";
 import { getLoyaltyCard } from "@/lib/actions/account";
-
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { trackCheckoutStarted } from "@/lib/tracking";
-
-// Initialize Stripe Promise outside component to avoid recreation
-const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = stripeKey ? loadStripe(stripeKey) : Promise.resolve(null);
-
-function CheckoutForm() {
-    const stripe = useStripe();
-    const elements = useElements();
-
-    return (
-        <div className="bg-secondary/50 p-4 rounded-xl space-y-4">
-            <div className="bg-background rounded-md p-3 border border-border">
-                <CardElement options={{
-                    style: {
-                        base: {
-                            fontSize: '16px',
-                            color: '#fff',
-                            '::placeholder': { color: '#888' },
-                            iconColor: '#00b4ff',
-                        },
-                        invalid: { color: '#ef4444' },
-                    }
-                }} />
-            </div>
-        </div>
-    );
-}
 
 function CartContent() {
     const router = useRouter();
@@ -53,9 +23,6 @@ function CartContent() {
     const setQty = useCartStore(state => state.setQty);
     const clearCart = useCartStore(state => state.clearCart);
     const getTotal = useCartStore(state => state.getTotal);
-
-    const stripe = useStripe();
-    const elements = useElements();
 
     useEffect(() => {
         setMounted(true);
@@ -80,7 +47,6 @@ function CartContent() {
     const handleCheckout = async () => {
         setLoading(true);
 
-        // B2C Tracking: checkout_started
         trackCheckoutStarted({
             items: items.map(i => ({
                 product_id: i.product_id, name: i.name, qty: i.qty, price: i.price
@@ -91,44 +57,9 @@ function CartContent() {
         });
 
         try {
-            // 1. If paying with Stripe, process payment first
-            if (paymentMethod === 'tarjeta') {
-                if (!stripe || !elements) {
-                    throw new Error("Stripe no ha terminado de cargar.");
-                }
-
-                const cardElement = elements.getElement(CardElement);
-                if (!cardElement) throw new Error("Elemento de tarjeta no encontrado.");
-
-                const tempOrderRef = `PWA-${Date.now()}`;
-
-                // Create PaymentIntent
-                const intentRes = await fetch('/api/payments/intent', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        amount_cents: Math.round(subtotal * 100),
-                        order_ref: tempOrderRef
-                    })
-                });
-
-                const intentData = await intentRes.json();
-                if (!intentRes.ok) throw new Error(intentData.error || 'Error preparando pago');
-
-                // Confirm Card Payment
-                const { error, paymentIntent } = await stripe.confirmCardPayment(intentData.client_secret, {
-                    payment_method: { card: cardElement }
-                });
-
-                if (error) {
-                    throw new Error(error.message || 'Pago rechazado');
-                }
-            }
-
-            // 2. Create Odoo Order
             const payload = {
                 delivery_window: deliveryWindow,
-                payment_method: paymentMethod === 'tarjeta' ? 'tarjeta_confirmada' : paymentMethod,
+                payment_method: paymentMethod,
                 cart_lines: items,
                 reward_id: selectedReward?.id
             };
@@ -140,10 +71,16 @@ function CartContent() {
             });
 
             const data = await res.json();
-
             if (!res.ok) throw new Error(data.error || 'Failed to create order in Odoo');
 
             clearCart();
+
+            // Si es tarjeta y hay stripe_link → redirigir a pago
+            if (paymentMethod === 'tarjeta' && data.stripe_link) {
+                window.location.href = data.stripe_link;
+                return;
+            }
+
             router.push(`/order/confirmed?order_name=${data.order_name}&points=${pointsEarned}&window=${deliveryWindow}`);
 
         } catch (err: any) {
@@ -252,7 +189,7 @@ function CartContent() {
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Método de pago</label>
                             <div className="grid grid-cols-3 gap-2">
-                                {['efectivo', 'transferencia', ...(stripeKey ? ['tarjeta'] : [])].map((method) => (
+                                {['efectivo', 'transferencia', 'tarjeta'].map((method) => (
                                     <button
                                         key={method}
                                         onClick={() => setPaymentMethod(method)}
@@ -268,7 +205,9 @@ function CartContent() {
                         </div>
 
                         {paymentMethod === 'tarjeta' && (
-                            <CheckoutForm />
+                            <div className="bg-secondary/50 p-3 rounded-xl text-sm text-muted-foreground text-center">
+                                💳 Al confirmar serás redirigido a la página de pago seguro con tarjeta.
+                            </div>
                         )}
                     </div>
                 </section>
@@ -298,7 +237,7 @@ function CartContent() {
                         <span className="text-xs text-primary font-medium">Ganarás {pointsEarned} puntos al entregar</span>
                     </div>
                     <button
-                        disabled={loading || (paymentMethod === 'tarjeta' && !stripe)}
+                        disabled={loading}
                         onClick={handleCheckout}
                         className="bg-primary px-8 h-14 rounded-2xl flex items-center justify-center gap-2 text-white font-bold text-lg transition-all hover:scale-105 active:scale-95 neon-glow disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -311,9 +250,5 @@ function CartContent() {
 }
 
 export default function CartClient() {
-    return (
-        <Elements stripe={stripePromise}>
-            <CartContent />
-        </Elements>
-    );
+    return <CartContent />;
 }
