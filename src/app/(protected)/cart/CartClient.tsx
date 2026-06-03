@@ -57,10 +57,15 @@ function CartContent() {
         });
 
         try {
+            // Limpiar image_512 antes de enviar — evita payload enorme que falla en Odoo
+            const cleanLines = items.map(({ product_id, name, price, qty }) => ({
+                product_id, name, price, qty
+            }));
+
             const payload = {
                 delivery_window: deliveryWindow,
                 payment_method: paymentMethod,
-                cart_lines: items,
+                cart_lines: cleanLines,
                 reward_id: selectedReward?.id
             };
 
@@ -188,8 +193,8 @@ function CartContent() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Método de pago</label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {['efectivo', 'transferencia', 'tarjeta'].map((method) => (
+                            <div className="grid grid-cols-2 gap-2">
+                                {['efectivo', 'tarjeta'].map((method) => (
                                     <button
                                         key={method}
                                         onClick={() => setPaymentMethod(method)}
