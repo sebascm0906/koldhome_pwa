@@ -78,8 +78,7 @@ export async function POST(req: Request) {
       x_studio_horario_de_entrega_solicitado: delivery_window,
       x_studio_mtodo_de_pago: normalizedPayment,
       x_studio_canal_origen: "pwa_koldhome",
-      x_source: "koldhome_pwa",
-      x_kold_order_source: "koldhome_pwa",
+      x_kold_order_source: "pwa_b2c",
       order_line: orderLines
     };
 
