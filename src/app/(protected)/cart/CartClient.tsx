@@ -78,11 +78,19 @@ function CartContent() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to create order in Odoo');
 
-            // Si es tarjeta: requiere link de pago. Si no se generó, NO confirmar como exitoso.
+            // Si es tarjeta: ir a la pantalla de pago embebida (no salir de la PWA).
+            // No limpiamos el carrito todavía: si regresan sin pagar, lo conservan.
             if (paymentMethod === 'tarjeta') {
                 if (data.stripe_link) {
-                    clearCart();
-                    window.location.href = data.stripe_link;
+                    const params = new URLSearchParams({
+                        link: data.stripe_link,
+                        order_id: String(data.order_id),
+                        order_name: data.order_name,
+                        amount: subtotal.toFixed(2),
+                        points: String(pointsEarned),
+                        window: deliveryWindow,
+                    });
+                    router.push(`/payment?${params.toString()}`);
                     return;
                 }
                 throw new Error('No se pudo generar el link de pago. Intenta de nuevo o elige Efectivo.');
