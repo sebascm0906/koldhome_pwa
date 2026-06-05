@@ -6,15 +6,16 @@ import BackButton from "./BackButton";
 interface HeaderProps {
   title?: string;
   showBack?: boolean;
+  backHref?: string;
 }
 
-export default async function Header({ title, showBack = false }: HeaderProps) {
+export default async function Header({ title, showBack = false, backHref }: HeaderProps) {
   const { points } = await getLoyaltyCard();
 
   return (
     <header className="sticky top-0 z-50 glass px-4 py-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        {showBack && <BackButton />}
+        {showBack && <BackButton href={backHref} />}
         {title && <h1 className="font-bold text-lg">{title}</h1>}
         {!title && !showBack && (
           <div className="flex flex-col">
