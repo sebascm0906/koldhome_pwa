@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
+import { emitPwaLanding } from "@/lib/koldFunnel";
 
 export default function LoginPage() {
+  // Control Tower: web_visit (source pwa) al abrir la landing — fire-and-forget
+  useEffect(() => { emitPwaLanding(); }, []);
   const [mobile, setMobile] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
