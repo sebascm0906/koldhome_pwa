@@ -7,7 +7,7 @@ import { emitPwaLanding } from "@/lib/koldFunnel";
 // Número de WhatsApp de KoldHome en formato E.164 sin "+", ej. "5215512345678"
 // Configurable vía variable de entorno NEXT_PUBLIC_KOLDHOME_WA_NUMBER
 const KOLDHOME_WA_NUMBER =
-  process.env.NEXT_PUBLIC_KOLDHOME_WA_NUMBER || "5215540000990";
+  process.env.NEXT_PUBLIC_KOLDHOME_WA_NUMBER || "5213345126769";
 
 // Mensaje preescrito que el cliente enviará para iniciar el flujo del Magic Link
 const WA_MESSAGE = "Dame mi acceso";
