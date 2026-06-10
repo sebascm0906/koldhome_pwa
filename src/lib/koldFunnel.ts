@@ -28,6 +28,52 @@ function fday(): string {
   }
 }
 
+/**
+ * web_visit al abrir la LANDING PÚBLICA de la PWA (pantalla de login).
+ * entry_source: web_pwa_link (viene del botón "Abrir la app" en koldhome.com),
+ * magic_link (link de WhatsApp con token) o direct. 1 por sesión/día (idempotente).
+ * Fire-and-forget; nunca lanza; sin PII.
+ */
+export function emitPwaLanding(): void {
+  try {
+    if (typeof window === 'undefined') return;
+    let sid = '';
+    try {
+      sid = window.localStorage.getItem('kh_pwa_sid') || '';
+      if (!sid) {
+        sid = 'pwa-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        window.localStorage.setItem('kh_pwa_sid', sid);
+      }
+    } catch {
+      sid = 'pwa-anon';
+    }
+    const ref = document.referrer || '';
+    const params = new URLSearchParams(window.location.search);
+    let entry = 'direct';
+    if (/koldhome\.com/i.test(ref)) entry = 'web_pwa_link';
+    else if (params.get('token') || /authenticate/i.test(window.location.pathname)) entry = 'magic_link';
+    else if (params.get('utm_medium') === 'b2c_bot' || params.get('utm_source') === 'whatsapp') entry = 'magic_link';
+    const day = fday();
+    const body = JSON.stringify({
+      event: 'web_visit',
+      event_id: `web_visit:pwa:${sid}:landing:${day}`,
+      ts: new Date().toISOString(),
+      source: 'pwa',
+      session_id: sid,
+      cart_token: '',
+      utm: { source: params.get('utm_source') || '', medium: params.get('utm_medium') || '' },
+      data: { path: window.location.pathname, referrer: ref.slice(0, 120), entry_source: entry },
+    });
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      navigator.sendBeacon(FUNNEL_ENDPOINT, new Blob([body], { type: 'text/plain' }));
+    } else if (typeof fetch !== 'undefined') {
+      fetch(FUNNEL_ENDPOINT, { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'text/plain' }, mode: 'cors' }).catch(() => {});
+    }
+  } catch {
+    /* nunca romper la app */
+  }
+}
+
 export interface FunnelContext {
   sessionId: string;
   source: string; // 'pwa' | 'web'
