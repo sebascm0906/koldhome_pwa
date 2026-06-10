@@ -22,6 +22,8 @@
  * All events are fire-and-forget (non-blocking).
  */
 
+import { emitFunnel } from './koldFunnel';
+
 // ============================================================
 // Session ID (persistent per tab session, UUID v4)
 // ============================================================
@@ -150,6 +152,15 @@ export async function trackEvent(
       body: JSON.stringify(payload),
     }).catch(() => {
       // Silently fail — tracking should never break the app
+    });
+
+    // Control Tower funnel (Fase 2) — emite tope de funnel a Odoo /kold/funnel/web
+    // (first-party, sin API key, fire-and-forget). No-op para eventos fuera del mapa.
+    emitFunnel(eventType, {
+      sessionId: payload.session_id,
+      source: payload.source_system === 'koldhome_pwa' ? 'pwa' : 'web',
+      utm: { source: payload.utm_source, medium: payload.utm_medium },
+      data: { path: payload.page_url, order_id: payload.order_id, combo: payload.combo },
     });
   } catch {
     // Never throw from tracking
